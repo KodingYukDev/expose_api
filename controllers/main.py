@@ -15,6 +15,7 @@ class ExposeApiController(http.Controller):
 
         result = []
         for p in posts:
+            has_image = getattr(p, 'image_1920', False)
             result.append({
                 'id': p.id,
                 'name': p.name,
@@ -22,7 +23,7 @@ class ExposeApiController(http.Controller):
                 'website_url': p.website_url or '',
                 'create_date': p.create_date,
                 'write_date': p.write_date,
-                'cover': f"/web/image/blog.post/{p.id}/image_1920" if p.image_1920 else None,
+                'cover': f"/web/image/blog.post/{p.id}/image_1920" if has_image else None,
             })
 
         return {'result': result}
@@ -41,6 +42,8 @@ class ExposeApiController(http.Controller):
         if not post:
             return {'result': None}
 
+        has_image = getattr(post, 'image_1920', False)
+
         return {
             'result': {
                 'id': post.id,
@@ -50,7 +53,7 @@ class ExposeApiController(http.Controller):
                 'create_date': post.create_date,
                 'write_date': post.write_date,
                 'content': post.content or '',
-                'cover': f"/web/image/blog.post/{post.id}/image_1920" if post.image_1920 else None,
+                'cover': f"/web/image/blog.post/{post.id}/image_1920" if has_image else None,
             }
         }
 
