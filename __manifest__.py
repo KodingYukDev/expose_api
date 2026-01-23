@@ -10,6 +10,7 @@
         'website_event',
         'hr_recruitment',
         'crm',
+        'kodingyuk_website_cms',
     ],
     'data': [],
     'installable': True,

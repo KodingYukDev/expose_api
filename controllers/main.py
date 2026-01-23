@@ -94,6 +94,11 @@ class ExposeApiController(http.Controller):
 
         return {'result': {'id': lead.id}}
 
+    @http.route('/api/public/site/content', type='json', auth='public', csrf=False, methods=['POST'])
+    def public_site_content(self, **kwargs):
+        payload = request.env['website.cms.content.service'].sudo().get_public_payload()
+        return {'result': payload}
+
     @http.route('/api/public/courses', type='json', auth='public', csrf=False, methods=['POST'])
     def public_courses(self, limit=100, offset=0, **kwargs):
         channels = request.env['slide.channel'].sudo().search([
