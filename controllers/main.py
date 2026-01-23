@@ -3,6 +3,10 @@ from odoo.http import request
 
 
 class ExposeApiController(http.Controller):
+    @http.route('/api/public/ping', type='http', auth='public', csrf=False)
+    def public_ping(self, **kwargs):
+        return 'ok'
+
     @http.route('/api/public/blog/posts', type='json', auth='public', csrf=False, methods=['POST'])
     def public_blog_posts(self, limit=30, offset=0, **kwargs):
         posts = request.env['blog.post'].sudo().search([
@@ -151,5 +155,85 @@ class ExposeApiController(http.Controller):
                 'channel_type': channel.channel_type,
                 'image': f"/web/image/slide.channel/{channel.id}/image_1920" if channel.image_1920 else None,
                 'slides_preview': preview_slides,
+            }
+        }
+
+    @http.route('/api/public/events', type='json', auth='public', csrf=False, methods=['POST'])
+    def public_events(self, limit=50, offset=0, **kwargs):
+        events = request.env['event.event'].sudo().search([
+            ('website_published', '=', True),
+        ], limit=int(limit), offset=int(offset), order='date_begin asc')
+
+        result = []
+        for e in events:
+            result.append({
+                'id': e.id,
+                'name': e.name,
+                'subtitle': e.subtitle or '',
+                'description': e.description or '',
+                'website_url': e.website_url or '',
+                'date_begin': e.date_begin,
+                'date_end': e.date_end,
+                'timezone': e.event_tz or '',
+                'city': e.address_id.city if e.address_id else '',
+                'country': e.address_id.country_id.name if e.address_id and e.address_id.country_id else '',
+                'seats_max': e.seats_max,
+                'seats_available': e.seats_available,
+                'image': f"/web/image/event.event/{e.id}/image_1920" if e.image_1920 else None,
+            })
+
+        return {'result': result}
+
+    @http.route('/api/public/event', type='json', auth='public', csrf=False, methods=['POST'])
+    def public_event(self, id=None, slug=None, **kwargs):
+        domain = [('website_published', '=', True)]
+        if id:
+            domain.append(('id', '=', int(id)))
+        elif slug:
+            domain.append(('website_url', 'ilike', f"/{slug}"))
+        else:
+            return {'result': None}
+
+        event = request.env['event.event'].sudo().search(domain, limit=1)
+        if not event:
+            return {'result': None}
+
+        tickets = []
+        for t in event.event_ticket_ids:
+            tickets.append({
+                'id': t.id,
+                'name': t.name,
+                'price': t.price,
+                'seats_max': t.seats_max,
+                'seats_available': t.seats_available,
+            })
+
+        sessions = []
+        for s in event.event_session_ids:
+            sessions.append({
+                'id': s.id,
+                'name': s.name,
+                'date_begin': s.date_begin,
+                'date_end': s.date_end,
+            })
+
+        return {
+            'result': {
+                'id': event.id,
+                'name': event.name,
+                'subtitle': event.subtitle or '',
+                'description': event.description or '',
+                'website_url': event.website_url or '',
+                'date_begin': event.date_begin,
+                'date_end': event.date_end,
+                'timezone': event.event_tz or '',
+                'city': event.address_id.city if event.address_id else '',
+                'country': event.address_id.country_id.name if event.address_id and event.address_id.country_id else '',
+                'organizer': event.organizer_id.name if event.organizer_id else '',
+                'seats_max': event.seats_max,
+                'seats_available': event.seats_available,
+                'image': f"/web/image/event.event/{event.id}/image_1920" if event.image_1920 else None,
+                'tickets': tickets,
+                'sessions': sessions,
             }
         }
